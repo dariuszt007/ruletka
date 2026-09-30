@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FEVER ルーレット</title>
+    <style>
+        /* Pachinko Neon Style */
+        body { 
+            font-family: "Arial Black", "Impact", "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif; 
+            text-align: center; 
+            background: radial-gradient(circle, #1a0033 0%, #050014 100%); 
+            color: #fff;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container { 
+            max-width: 600px; 
+            margin: auto; 
+            background: rgba(15, 5, 30, 0.9); 
+            padding: 30px; 
+            border-radius: 20px; 
+            border: 4px solid #ff007f;
+            box-shadow: 0 0 25px #ff007f, inset 0 0 15px #ff007f;
+        }
+        h2 {
+            font-size: 32px;
+            color: #00ffff;
+            text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff;
+            letter-spacing: 2px;
+            margin-top: 0;
+        }
+        label {
+            font-size: 18px;
+            color: #ff007f;
+            text-shadow: 0 0 5px #ff007f;
+        }
+        input[type="number"] {
+            font-size: 18px; 
+            padding: 5px; 
+            width: 70px; 
+            background: #000; 
+            color: #fff; 
+            border: 2px solid #00ffff; 
+            border-radius: 5px;
+            text-align: center;
+        }
+        /* Neon Display Screen */
+        .wheel-box { 
+            font-size: 72px; 
+            font-weight: 900; 
+            margin: 30px 0; 
+            height: 140px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            background: #000; 
+            color: #39ff14; 
+            border-radius: 15px; 
+            border: 5px solid #39ff14; 
+            box-shadow: 0 0 30px #39ff14, inset 0 0 15px #39ff14;
+            text-shadow: 0 0 10px #39ff14, 0 0 20px #39ff14;
+        }
+        .spinning {
+            animation: pulse 0.1s infinite alternate;
+        }
+        @keyframes pulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.03); }
+        }
+        /* Pachinko Control Buttons */
+        button { 
+            font-size: 22px; 
+            font-weight: bold;
+            padding: 12px 30px; 
+            margin: 10px; 
+            cursor: pointer; 
+            border: none; 
+            border-radius: 50px; 
+            text-transform: uppercase;
+            transition: 0.1s;
+            box-shadow: 0 5px 0 #444;
+        }
+        button:active {
+            transform: translateY(5px);
+            box-shadow: 0 0px 0 #444;
+        }
+        #initBtn { 
+            background: linear-gradient(180deg, #00ffff, #0088cc); 
+            color: #000; 
+            font-size: 16px; 
+            padding: 8px 15px; 
+            box-shadow: 0 3px 0 #004466;
+        }
+        #startBtn { 
+            background: linear-gradient(180deg, #ffcc00, #ff6600); 
+            color: #fff; 
+            text-shadow: 0 2px 2px #000;
+            box-shadow: 0 5px 0 #993300;
+        }
+        #stopBtn { 
+            background: linear-gradient(180deg, #ff0055, #990022); 
+            color: #fff; 
+            text-shadow: 0 2px 2px #000;
+            box-shadow: 0 5px 0 #550011;
+        }
+        button:disabled { 
+            background: #333 !important; 
+            color: #666 !important; 
+            box-shadow: none !important; 
+            cursor: not-allowed; 
+            transform: none !important;
+        }
+        h3 { color: #ffcc00; text-shadow: 0 0 8px #ffcc00; margin-top: 30px; }
+        #numbersList { word-break: break-all; color: #aaa; font-size: 16px; min-height: 40px; }
+        
+        /* Pachinko Rush / Fever Modal */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); align-items: center; justify-content: center; z-index: 100; }
+        .modal-content { 
+            background: #110022; 
+            padding: 40px; 
+            border-radius: 20px; 
+            text-align: center; 
+            max-width: 450px; 
+            border: 5px solid #ffcc00;
+            box-shadow: 0 0 40px #ffcc00;
+        }
+        #modalTitle { 
+            font-size: 42px; 
+            color: #ff0055; 
+            text-shadow: 0 0 15px #ff0055, 0 0 30px #ff0055; 
+            margin-bottom: 20px;
+            animation: pulse 0.2s infinite alternate;
+        }
+        .modal-content p { font-size: 18px; color: #fff; }
+        .modal-content button { width: 80%; margin: 10px auto; display: block; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>🎰 ルーレット 🎰</h2>
+    
+    <div>
+        <label for="maxNumber">MAX玉数：1 〜 </label>
+        <!-- Dodano zdarzenie onchange/oninput zapisujące nową wartość -->
+        <input type="number" id="maxNumber" value="40" min="2" max="100" onchange="zapiszMaxLiczbe()">
+        <button id="initBtn" onclick="inicjalizujRuletke()">リセット</button>
+    </div>
+
+    <div class="wheel-box" id="displayBox">7</div>
+
+    <button id="startBtn" onclick="startRuletka()">スタート</button>
+    <button id="stopBtn" onclick="stopRuletka()" disabled>ストップ</button>
+
+    <h3>稼働中の数字一覧:</h3>
+    <div id="numbersList"></div>
+</div>
+
+<div class="modal" id="resultModal">
+    <div class="modal-content">
+        <h2 id="modalTitle">大当り：7</h2>
+        <p>この数字の次回大当り判定は？</p>
+        <button onclick="decyzja(true)" style="background: linear-gradient(180deg, #ff3333, #aa0000); color: white; box-shadow: 0 4px 0 #550000;">確変終了 (削 除)</button>
+        <button onclick="decyzja(false)" style="background: linear-gradient(180deg, #33ff33, #00aa00); color: black; box-shadow: 0 4px 0 #005500;">保留継続 (残 す)</button>
+    </div>
+</div>
+
+<script>
+    let numery = [];
+    let intervalId = null;
+    let aktualnyIndeks = 0;
+    let wylosowanyNumer = null;
+
+    // Funkcja zapisująca wybraną wartość w pamięci przeglądarki
+    function zapiszMaxLiczbe() {
+        const inputVal = document.getElementById('maxNumber').value;
+        if (inputVal) {
+            localStorage.setItem('pachinko_max_number', inputVal);
+        }
+    }
+
+    // Funkcja wczytująca zapisaną wartość przy pierwszym wejściu
+    function wczytajZapisanaLiczbe() {
+        const zapisanyMax = localStorage.getItem('pachinko_max_number');
+        if (zapisanyMax) {
+            document.getElementById('maxNumber').value = zapisanyMax;
+        }
+    }
+
+    function inicjalizujRuletke() {
+        zapiszMaxLiczbe(); // Zapisujemy aktualny stan pola do localStorage
+        const max = parseInt(document.getElementById('maxNumber').value) || 40;
+        
+        numery = [];
+        for (let i = 1; i <= max; i++) {
+            numery.push(i);
+        }
+        
+        // Przywrócenie domyślnych stylów pola wyświtlania (w przypadku resetu po 'END')
+        const displayBox = document.getElementById('displayBox');
+        displayBox.style.color = "#39ff14";
+        displayBox.style.borderColor = "#39ff14";
+        displayBox.style.boxShadow = "0 0 30px #39ff14, inset 0 0 15px #39ff14";
+
+        aktualizujWidok();
+        document.getElementById('startBtn').disabled = false;
+    }
+
+    function aktualizujWidok() {
+        document.getElementById('numbersList').innerText = numery.join(' , ');
+        if (numery.length > 0) {
+            if(!intervalId) {
+                document.getElementById('displayBox').innerText = numery[0];
+            }
+        } else {
+            document.getElementById('displayBox').innerText = "END";
+            document.getElementById('displayBox').style.color = "#ff0055";
+            document.getElementById('displayBox').style.borderColor = "#ff0055";
+            document.getElementById('displayBox').style.boxShadow = "0 0 30px #ff0055, inset 0 0 15px #ff0055";
+            document.getElementById('startBtn').disabled = true;
+        }
+    }
+
+    function startRuletka() {
+        if (numery.length === 0) return;
+        
+        document.getElementById('startBtn').disabled = true;
+        document.getElementById('initBtn').disabled = true;
+        document.getElementById('stopBtn').disabled = false;
+        document.getElementById('displayBox').classList.add('spinning');
+
+        intervalId = setInterval(() => {
+            aktualnyIndeks = Math.floor(Math.random() * numery.length);
+            document.getElementById('displayBox').innerText = numery[aktualnyIndeks];
+        }, 40); // Szybsze odświeżanie dla dynamiki pachinko
+    }
+
+    function stopRuletka() {
+        clearInterval(intervalId);
+        intervalId = null;
+        wylosowanyNumer = numery[aktualnyIndeks];
+        
+        document.getElementById('stopBtn').disabled = true;
+        document.getElementById('displayBox').classList.remove('spinning');
+        
+        // Pokazuje okno z decyzją w stylu "Oōatari" (Jackpot / Wygrana)
+        document.getElementById('modalTitle').innerText = "🎉 大当り：" + wylosowanyNumer + " 🎉";
+        document.getElementById('resultModal').style.display = 'flex';
+    }
+
+    function decyzja(usun) {
+        if (usun) {
+            numery.splice(aktualnyIndeks, 1);
+        }
+        
+        document.getElementById('resultModal').style.display = 'none';
+        document.getElementById('startBtn').disabled = numery.length === 0;
+        document.getElementById('initBtn').disabled = false;
+        aktualizujWidok();
+    }
+
+    // Uruchomienie przy starcie: najpierw wczytujemy z localStorage, potem tworzymy pulę
+    wczytajZapisanaLiczbe();
+    inicjalizujRuletke();
+</script>
+
+</body>
+</html>
